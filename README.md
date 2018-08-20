@@ -48,7 +48,7 @@ All remaining operations should be done from the root user.
 ```
 # apt-get update
 # apt-get install -y protobuf-compiler python-pil python-lxml python-pip python-dev git
-# pip install Flask==0.12.2 WTForms==2.1 Flask_WTF==0.14.2 Werkzeug==0.12.2
+# pip install Flask==0.12.2 WTForms==2.1 Flask_WTF==0.14.2 Werkzeug==0.12.2 flask-cors==3.0.6
 # pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.1.0-cp27-none-linux_x86_64.whl
 ```
 
