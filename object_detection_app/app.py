@@ -15,11 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from __future__ import print_function
 import base64
 import cStringIO
 import sys
 import tempfile
+import json
+import time
 
 MODEL_BASE = '/opt/models/research'
 sys.path.append(MODEL_BASE)
@@ -27,6 +29,7 @@ sys.path.append(MODEL_BASE + '/object_detection')
 sys.path.append(MODEL_BASE + '/slim')
 
 from decorator import requires_auth
+from flask_cors import CORS
 from flask import Flask
 from flask import redirect
 from flask import render_template
@@ -44,7 +47,7 @@ from wtforms import ValidationError
 
 
 app = Flask(__name__)
-
+CORS(app)
 
 @app.before_request
 @requires_auth
@@ -142,7 +145,6 @@ def encode_image(image):
       base64.b64encode(image_buffer.getvalue()))
   return imgstr
 
-
 def detect_objects(image_path):
   image = Image.open(image_path).convert('RGB')
   boxes, scores, classes, num_detections = client.detect(image)
@@ -150,7 +152,7 @@ def detect_objects(image_path):
 
   new_images = {}
   for i in range(num_detections):
-    if scores[i] < 0.7: continue
+    if scores[i] < 0.1: continue
     cls = classes[i]
     if cls not in new_images.keys():
       new_images[cls] = image.copy()
@@ -166,6 +168,32 @@ def detect_objects(image_path):
 
   return result
 
+def detect_boxes(image_path):
+  image = Image.open(image_path).convert('RGB')
+  boxes, scores, classes, num_detections = client.detect(image)
+  image.thumbnail((480, 480), Image.ANTIALIAS)
+
+  new_images = {}
+  ret = []
+  for i in range(num_detections):
+    if scores[i] < 0.1: continue
+    cls = classes[i]
+    if cls not in new_images.keys():
+      new_images[cls] = image.copy()
+      #ret_boxes[client.category_index[cls]['name']] = boxes[i].tolist()
+    ret.append({'category': client.category_index[cls]['name'], 'score':str(scores[i]), 'box': boxes[i].tolist()})
+    draw_bounding_box_on_image(new_images[cls], boxes[i],
+                               thickness=int(scores[i]*10)-4)
+
+  result = {}
+  result['original'] = encode_image(image.copy())
+
+  for cls, new_image in new_images.iteritems():
+    category = client.category_index[cls]['name']
+    result[category] = encode_image(new_image)
+
+  return ret
+
 
 @app.route('/')
 def upload():
@@ -175,7 +203,9 @@ def upload():
 
 @app.route('/post', methods=['GET', 'POST'])
 def post():
+  print("hello post!", file=sys.stderr)
   form = PhotoForm(CombinedMultiDict((request.files, request.form)))
+  print(form.data, file=sys.stderr)
   if request.method == 'POST' and form.validate():
     with tempfile.NamedTemporaryFile() as temp:
       form.input_photo.data.save(temp)
@@ -185,12 +215,31 @@ def post():
     photo_form = PhotoForm(request.form)
     return render_template('upload.html',
                            photo_form=photo_form, result=result)
+
   else:
     return redirect(url_for('upload'))
 
+@app.route('/post-boxes', methods=['GET', 'POST'])
+def postboxes():
+  print("hello post-boxes!", file=sys.stderr)
+  form = PhotoForm(CombinedMultiDict((request.files, request.form)))
+  print(form.data, file=sys.stderr)
+  if request.method == 'POST' and form.validate():
+    with tempfile.NamedTemporaryFile() as temp:
+#    with open(str(int(time.time()*1000))+".png", 'w') as outfile:
+      form.input_photo.data.save(temp)
+      temp.flush()
+      result = detect_boxes(temp.name)
+
+    photo_form = PhotoForm(request.form)
+
+    return render_template('boxes.html', result=json.dumps(result))
+  else:
+    return redirect(url_for('upload'))
 
 client = ObjectDetector()
 
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=80, debug=False)
+
