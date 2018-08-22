@@ -8,7 +8,6 @@ This is an example application demonstrating how
 
 ## Products
 - [TensorFlow][3]
-- [Google Compute Engine][4]
 
 ## Language
 - [Python][5]
@@ -16,40 +15,36 @@ This is an example application demonstrating how
 [1]: https://github.com/tensorflow/models/tree/master/research/object_detection
 [2]: https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md
 [3]: https://www.tensorflow.org/
-[4]: https://cloud.google.com/compute/
 [5]: https://python.org
 
 ## Prerequisites
-1. A Google Cloud Platform Account
-2. [A new Google Cloud Platform Project][6] for this lab with billing enabled
-
-[6]: https://console.developers.google.com/project
-
-## Do this first
-First you launch a GCE instance with the following configuration.
-
-- vCPU x 8
-- Memory 8GB
-- Debian GNU/Linux 9 (stretch) as a guest OS
-- Allow HTTP traffic
-- Assign a static IP address
-
-You can leave other settings as default. Once the instance has started,
- log in to the guest OS using SSH and change the OS user to root.
-
-```
-$ sudo -i
-```
-
-All remaining operations should be done from the root user.
+1. ubuntu server with nvidia gpu
 
 ## Install packages
 
 ```
 # apt-get update
-# apt-get install -y protobuf-compiler python-pil python-lxml python-pip python-dev git
-# pip install Flask==0.12.2 WTForms==2.1 Flask_WTF==0.14.2 Werkzeug==0.12.2 flask-cors==3.0.6
-# pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.1.0-cp27-none-linux_x86_64.whl
+# apt-get install -y protobuf-compiler git
+(install miniconda)
+$ conda create --name obj-detect python=2.7 pip
+$ conda activate obj-detect
+$ (obj-detect) pip install Flask==0.12.2 WTForms==2.1 Flask_WTF==0.14.2 Werkzeug==0.12.2 flask-cors==3.0.6 Pillow==5.2.0
+$ (obj-detect) pip install --upgrade https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.10.0-cp27-none-linux_x86_64.whl
+$ (obj-detect) python -c "import tensorflow as tf; print(tf.__version__)"
+...
+ImportError: libcublas.so.9.0: cannot open shared object file: No such file or directory
+...
+```
+
+## Install gpu support for tensorflow
+https://www.tensorflow.org/install/install_linux?hl=ko#tensorflow_gpu_support
+ - install nvidia driver(https://www.linuxbabe.com/ubuntu/install-nvidia-driver-ubuntu-18-04)
+ - cuda toolkit 9.0
+ - cudnn 7.2(or above) for cuda 9.0
+
+```
+$ (obj-detect) python -c "import tensorflow as tf; print(tf.__version__)"
+1.10.0
 ```
 
 ## Install the Object Detection API library
@@ -84,19 +79,14 @@ All remaining operations should be done from the root user.
 
 ```
 # cd $HOME
-# git clone https://github.com/GoogleCloudPlatform/tensorflow-object-detection-example
+# git clone https://github.com/gangok/tensorflow-object-detection-example
 # cp -a tensorflow-object-detection-example/object_detection_app /opt/
 # cp /opt/object_detection_app/object-detection.service /etc/systemd/system/
+(edit path of conda activate in /etc/systemd/system/object-detection.service)
 ```
 
-This application provides a simple user authentication mechanism.
- You can change the username and password by modifying the following
- part in `/opt/object_detection_app/decorator.py`.
-
-```
-USERNAME = 'username'
-PASSWORD = 'passw0rd'
-```
+A simple user authentication mechanism which originally existed was removed.
+(anybody who knows url can use this application)
 
 ## Launch the demo application
 
