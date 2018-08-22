@@ -41,6 +41,11 @@ https://www.tensorflow.org/install/install_linux?hl=ko#tensorflow_gpu_support
  - install nvidia driver(https://www.linuxbabe.com/ubuntu/install-nvidia-driver-ubuntu-18-04)
  - cuda toolkit 9.0
  - cudnn 7.2(or above) for cuda 9.0
+   
+(fyi: To set library path for every user including root, make a new file "cuda.conf" at /etc/ld.so.conf.d whose content is like below)
+```
+/user/local/cuda/lib64
+```
 
 ```
 $ (obj-detect) python -c "import tensorflow as tf; print(tf.__version__)"
