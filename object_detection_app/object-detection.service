@@ -3,7 +3,7 @@ Description=Object Detection API Demo
 After=syslog.target network.target auditd.service
 
 [Service]
-ExecStart=/opt/object_detection_app/app.py
+ExecStart=/bin/bash -c 'source /home/heimdall/miniconda3/bin/activate obj-detect && python /opt/object_detection_app/app.py'
 ExecStop=/bin/kill -TERM $MAINPID
 
 [Install]
